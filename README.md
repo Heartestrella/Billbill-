@@ -12,3 +12,7 @@ pip install -r requirements.txt
 
 ```
 安装依赖运行，如有bug请提交
+
+若无法运行请尝试使用管理员身份或关闭windows防火墙
+
+如果觉得有用请给个星，谢谢
