@@ -16,3 +16,15 @@ pip install -r requirements.txt
 若无法运行请尝试使用管理员身份或关闭windows防火墙
 
 如果觉得有用请给个星，谢谢
+
+阶段性问题：
+1.首次运行时需重新播放一首歌，否则无法识别
+2.暂停播放时会继续输出内容
+3.无法隐藏到收纳栏中最小化
+
+如果需要开机自启动可以通过cmd执行：shell:start
+定位到开机自启动目录，然后编写一个startup.bat
+内容如下：
+python3 路径到小葫芦bgm代替.py
+
+若执行python3 路径到小葫芦bgm代替.py  无输出请尝试：python 路径到小葫芦bgm代替.py
