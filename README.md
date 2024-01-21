@@ -4,4 +4,11 @@
 python3 小葫芦bgm代替.py
 ```
 
-或直接运行打包好的exe
+打包好的exe暂时有bug无法运行
+
+请自行安装python3.8以上并执行
+```
+pip install -r requirements.txt
+
+```
+安装依赖运行，如有bug请提交
