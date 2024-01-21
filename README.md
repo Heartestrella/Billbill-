@@ -28,3 +28,5 @@ pip install -r requirements.txt
 python3 路径到小葫芦bgm代替.py
 
 若执行python3 路径到小葫芦bgm代替.py  无输出请尝试：python 路径到小葫芦bgm代替.py
+
+Bilibili video:https://www.bilibili.com/video/BV1Yb4y1N7X7/
