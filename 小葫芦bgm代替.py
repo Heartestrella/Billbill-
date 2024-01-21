@@ -6,9 +6,9 @@ import time
 import json
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from threading import Thread, Event, Lock
+from threading import Thread, Event
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_socketio import SocketIO
 
 decoder = json.JSONDecoder()
