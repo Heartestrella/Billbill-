@@ -17,6 +17,20 @@ socketio = SocketIO(app)
 app.logger = None
 
 
+def check_and_create_playing_file():
+    file_name = "playing.json"
+
+    # 检查文件是否存在
+    if os.path.isfile(file_name):
+        print(f"文件 '{file_name}' 已经存在.")
+    else:
+        # 如果文件不存在，则创建文件并写入空的JSON对象
+        with open(file_name, "w") as file:
+            print(f"文件 '{file_name}' 不存在，已创建.")
+            empty_json = {}
+            json.dump(empty_json, file, indent=2)
+
+
 # 原文链接：https://egg.moe/2020/07/get-netease-cloudmusic-playing 感激不尽
 class LoggingEventHandler(FileSystemEventHandler):
     def __init__(self):
@@ -196,6 +210,8 @@ class LoggingEventHandler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
+    check_and_create_playing_file()
+
     log = LoggingEventHandler()
 
     @app.route("/BGMName/")
