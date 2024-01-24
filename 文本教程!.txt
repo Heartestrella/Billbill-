@@ -1,0 +1,21 @@
+1.首先安装python,教程:https://zhuanlan.zhihu.com/p/344887837
+版本要求3.8及以上
+win + r 输入cmd回车
+输入python如果没有显示未知的命令则可以下一步
+
+2.cmd里输入pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+如果出现pip不是命令请删除python按照教程一步步来
+
+3.进入文件夹输入pip -r install requirements.txt或运行安装依赖.bat
+
+4.使用cmd输入python 小葫芦bgm代替.py 或运行run.bat 然后不要关闭cmd窗口后台挂起即可
+
+注意:运行如果没有问题应该是会输出:
+ * Serving Flask app '小葫芦bgm代替' (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+
+的,此时进入网易云音乐重新播放一首歌即可,记得在创意工坊里打开实验性选项
+

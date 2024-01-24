@@ -1,34 +1,31 @@
 """
-Making by heartbeat Github:https://github.com/Heartestrella/Billbill
+Making by heartbeat Github:
 """
 import os
 import time
 import json
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
 
 decoder = json.JSONDecoder()
 app = Flask(__name__)
 socketio = SocketIO(app)
 app.logger = None
+import logging
+
+log = logging.getLogger("werkzeug")
+log.disabled = True
+socketio = SocketIO(app, async_mode='threading')
 
 
 def check_and_create_playing_file():
     file_name = "playing.json"
-
-    # 检查文件是否存在
-    if os.path.isfile(file_name):
-        print(f"文件 '{file_name}' 已经存在.")
-    else:
-        # 如果文件不存在，则创建文件并写入空的JSON对象
-        with open(file_name, "w") as file:
-            print(f"文件 '{file_name}' 不存在，已创建.")
-            empty_json = {}
-            json.dump(empty_json, file, indent=2)
+    with open(file_name, "w", encoding="utf-8") as f:
+        json.dump({}, f, ensure_ascii=False, indent=2)
 
 
 # 原文链接：https://egg.moe/2020/07/get-netease-cloudmusic-playing 感激不尽
@@ -55,19 +52,31 @@ class LoggingEventHandler(FileSystemEventHandler):
 
     # 原文链接：https://blog.csdn.net/weixin_45576923/article/details/113815385 十分感激
     def get_lyric(self, song_id):
-        headers = {
-            "user-agent": "Mozilla/5.0",
-            "Referer": "http://music.163.com",
-            "Host": "music.163.com",
-        }
-        if not isinstance(song_id, str):
-            song_id = str(song_id)
-        url = f"http://music.163.com/api/song/lyric?id={song_id}+&lv=1&tv=-1"
-        r = requests.get(url, headers=headers)
-        r.raise_for_status()
-        r.encoding = r.apparent_encoding
-        json_obj = json.loads(r.text)
-        return json_obj["lrc"]["lyric"]
+        try :
+            headers = {
+                "user-agent": "Mozilla/5.0",
+                "Referer": "http://music.163.com",
+                "Host": "music.163.com",
+            }
+            if not isinstance(song_id, str):
+                song_id = str(song_id)
+            url = f"http://music.163.com/api/song/lyric?id={song_id}+&lv=1&tv=-1"
+
+            r = requests.get(url, headers=headers)
+            r.raise_for_status()
+            r.encoding = r.apparent_encoding
+            json_obj = json.loads(r.text)
+            
+            lyric_data = {
+                "lrc": json_obj["lrc"]["lyric"],
+                "tlyric": json_obj["tlyric"]["lyric"] if "tlyric" in json_obj else None
+            }
+            
+            return lyric_data
+        except:
+            time.sleep(3)
+            self.get_lyric(song_id)
+
 
     def get_history_file(self):
         path = os.path.join(
@@ -79,10 +88,15 @@ class LoggingEventHandler(FileSystemEventHandler):
             print("cloudmusic data folder not found")
             exit(1)
 
-    def start_timing(self, lyric: str):
+    def start_timing(self, lyric: list):
         if lyric:
             lrcDict = {}
+            lrcDict_cn = {}
+            lyric,cnlrc = lyric[0],lyric[1]
             musicList = lyric.splitlines()
+            
+            
+    
             for lrcLine in musicList:
                 lrcLineList = lrcLine.split("]")
                 for index in range(len(lrcLineList) - 1):
@@ -104,21 +118,23 @@ class LoggingEventHandler(FileSystemEventHandler):
                     if getTime < tempTime:
                         break
                 lrc = lrcDict.get(allTimeList[n])
-                if lrc == None:
+
+                if not lrc and not lrc:
                     pass
                 else:
                     # print(lrc)
                     data = self.data
                     all_time = int(int(self.duration) / 1000)
-                    data["Title"] = self.artist_list
+                    data["Title"] = f"{self.music_name} by {self.artist_list}"
                     data["AllTime"] = all_time
                     data["Now"] = self.timing
                     data["Lryic"] = lrc
+
                     data["FormattedTime"] = self.format_time(self.timing, all_time)
                     self.return_data = data
                     with open("playing.json", mode="w", encoding="utf-8") as f:
                         json.dump(data, f, ensure_ascii=False, indent=2)
-
+                    print(data)
                 if n in range(len(allTimeList) - 1):
                     time.sleep(allTimeList[n + 1] - allTimeList[n])
                     getTime += allTimeList[n + 1] - allTimeList[n]
@@ -150,7 +166,7 @@ class LoggingEventHandler(FileSystemEventHandler):
                     try:
                         song, artists, song_of_id = self.get_playing(path)
                         lyric = self.get_lyric(song_of_id)
-
+                        lrc,cnlrc = lyric['lrc'],lyric['tlyric']
                         playing = f'{song} - {" / ".join(artists)}'
                         #  print(playing)
                         if playing:
@@ -160,7 +176,7 @@ class LoggingEventHandler(FileSystemEventHandler):
                             self.timing = 2  # 识别到歌曲后开启计时
                             self.stop_timing_thread.clear()
                             self.start_timing_thread = Thread(
-                                target=self.start_timing, args=(lyric,)
+                                target=self.start_timing, args=([lrc,cnlrc],)
                             )
                             self.start_timing_thread.start()
 
