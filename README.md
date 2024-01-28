@@ -9,7 +9,6 @@ python3 BGM_helper.py
 请自行安装python3.8以上并执行
 ```
 pip install -r requirements.txt
-
 ```
 安装依赖运行，如有bug请提交
 
@@ -28,4 +27,5 @@ pip install -r requirements.txt
 
 
 History:
+
 Version 1.0.1:添加了对网易云音乐中文歌词显示的支持
