@@ -1,1 +1,1 @@
-python Ğ¡ºùÂ«bgm´úÌæ.py
+python BGM_helper.py

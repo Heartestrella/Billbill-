@@ -1,7 +1,7 @@
 对于Wallpaper的bilibili响应壁纸无法通过小葫芦BGM控制台获取歌词显示的第三方api
 
 ```
-python3 小葫芦bgm代替.py
+python3 BGM_helper.py
 ```
 
 打包好的exe暂时有bug无法运行
@@ -9,6 +9,7 @@ python3 小葫芦bgm代替.py
 请自行安装python3.8以上并执行
 ```
 pip install -r requirements.txt
+
 ```
 安装依赖运行，如有bug请提交
 
@@ -22,11 +23,9 @@ pip install -r requirements.txt
 3.无法隐藏到收纳栏中最小化
 
 
-如果需要开机自启动可以通过cmd执行：shell:start
-定位到开机自启动目录，然后编写一个startup.bat
-内容如下：
-python3 路径到小葫芦bgm代替.py
 
-若执行python3 路径到小葫芦bgm代替.py  无输出请尝试：python 路径到小葫芦bgm代替.py
+若执行python3 路径到BGM_helper.py  无输出请尝试：python 路径到BGM_helper.py
 
-Bilibili video:https://www.bilibili.com/video/BV1Yb4y1N7X7/
+
+History:
+Version 1.0.1:添加了对网易云音乐中文歌词显示的支持
