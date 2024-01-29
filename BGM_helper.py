@@ -11,7 +11,8 @@ from threading import Thread, Event, Lock
 import requests
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
-
+import pyaudio
+import numpy as np
 
 decoder = json.JSONDecoder()
 app = Flask(__name__)
@@ -51,6 +52,31 @@ class LoggingEventHandler(FileSystemEventHandler):
             "FormattedTime": "",  # 当前播放/总时长
         }
         self.return_data = None
+        self.history_music = []
+
+    def monitor_video(self) -> bool:
+        p = pyaudio.PyAudio()
+        stream = p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=44100,
+            input=True,
+            frames_per_buffer=1024,
+        )
+
+        data = stream.read(1024)
+        audio_data = np.fromstring(data, dtype=np.short)
+        temp = np.max(audio_data)
+        print(temp)
+
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+        if temp >= 200:
+            return True
+        else:
+            return False
 
     # 原文链接：https://blog.csdn.net/weixin_45576923/article/details/113815385 十分感激
     def get_lyric(self, song_id):
@@ -126,46 +152,43 @@ class LoggingEventHandler(FileSystemEventHandler):
 
             getTime = self.timing
             while not self.stop_timing_thread.is_set():
-                self.timing += 1
-                for n in range(len(allTimeList)):
-                    tempTime = allTimeList[n]
-                    if getTime < tempTime:
-                        break
-                lrc = lrcDict.get(allTimeList[n])
-                if cnlrc:
-                    for n in range(len(allTimeList_cn)):
-                        tempTime = allTimeList_cn[n]
+                if self.monitor_video():
+                    self.timing += 1
+                    for n in range(len(allTimeList)):
+                        tempTime = allTimeList[n]
                         if getTime < tempTime:
                             break
-                    lrc_cn = lrcDict_cn.get(allTimeList_cn[n])
-                if not lrc and not lrc:
-                    pass
-                else:
-                    # print(lrc)
-                    data = self.data
-                    all_time = int(int(self.duration) / 1000)
-                    data["Title"] = f"{self.music_name} by {self.artist_list}"
-                    data["AllTime"] = all_time
-                    data["Now"] = self.timing
-                    data["Lryic"] = lrc
+                    lrc = lrcDict.get(allTimeList[n])
                     if cnlrc:
-                        data["ChineseLryic"] = lrc_cn
-                    data["FormattedTime"] = self.format_time(self.timing, all_time)
-                    self.return_data = data
-                    with open("playing.json", mode="w", encoding="utf-8") as f:
-                        json.dump(data, f, ensure_ascii=False, indent=2)
-                    print(data)
-                if n in range(len(allTimeList) - 1):
-                    time.sleep(allTimeList[n + 1] - allTimeList[n])
-                    getTime += allTimeList[n + 1] - allTimeList[n]
+                        for n in range(len(allTimeList_cn)):
+                            tempTime = allTimeList_cn[n]
+                            if getTime < tempTime:
+                                break
+                        lrc_cn = lrcDict_cn.get(allTimeList_cn[n])
+                    if not lrc and not lrc:
+                        pass
+                    else:
+                        # print(lrc)
+                        data = self.data
+                        all_time = int(int(self.duration) / 1000)
+                        data["Title"] = f"{self.music_name} by {self.artist_list}"
+                        data["AllTime"] = all_time
+                        data["Now"] = self.timing
+                        data["Lryic"] = lrc
+                        if cnlrc:
+                            data["ChineseLryic"] = lrc_cn
+                        data["FormattedTime"] = self.format_time(self.timing, all_time)
+                        self.return_data = data
+                        with open("playing.json", mode="w", encoding="utf-8") as f:
+                            json.dump(data, f, ensure_ascii=False, indent=2)
+                        print(data)
+                    if n in range(len(allTimeList) - 1):
+                        time.sleep(allTimeList[n + 1] - allTimeList[n])
+                        getTime += allTimeList[n + 1] - allTimeList[n]
+                    else:
+                        break
                 else:
-                    break
-
-    def get_bgm_info(self):
-        data = self.return_data
-        print(self.return_data)
-        if data:
-            return data
+                    print("Wait for playing.")
 
     def format_time(self, current_time, total_time):
         current_minutes, current_seconds = divmod(current_time, 60)
@@ -185,22 +208,26 @@ class LoggingEventHandler(FileSystemEventHandler):
                 for _ in range(5):
                     try:
                         song, artists, song_of_id = self.get_playing(path)
-                        lyric = self.get_lyric(song_of_id)
-                        lrc, cnlrc = lyric["lrc"], lyric["tlyric"]
-                        playing = f'{song} - {" / ".join(artists)}'
-                        #  print(playing)
-                        if playing:
-                            if self.start_timing_thread:
-                                self.stop_timing_thread.set()
-                                self.start_timing_thread.join()
-                            self.timing = 2  # 识别到歌曲后开启计时
-                            self.stop_timing_thread.clear()
-                            self.start_timing_thread = Thread(
-                                target=self.start_timing, args=([lrc, cnlrc],)
-                            )
-                            self.start_timing_thread.start()
+                        if song in self.history_music:
+                            pass
+                        else:
+                            self.history_music.append(song)
+                            lyric = self.get_lyric(song_of_id)
+                            lrc, cnlrc = lyric["lrc"], lyric["tlyric"]
+                            playing = f'{song} - {" / ".join(artists)}'
+                            #  print(playing)
+                            if playing:
+                                if self.start_timing_thread:
+                                    self.stop_timing_thread.set()
+                                    self.start_timing_thread.join()
+                                self.timing = 2  # 识别到歌曲后开启计时
+                                self.stop_timing_thread.clear()
+                                self.start_timing_thread = Thread(
+                                    target=self.start_timing, args=([lrc, cnlrc],)
+                                )
+                                self.start_timing_thread.start()
 
-                        break
+                            break
                     except PermissionError:
                         time.sleep(1)
 
